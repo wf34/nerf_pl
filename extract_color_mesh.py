@@ -8,6 +8,8 @@ from tqdm import tqdm
 import mcubes
 import open3d as o3d
 from plyfile import PlyData, PlyElement
+import warnings
+warnings.filterwarnings("ignore", category=DeprecationWarning)
 from argparse import ArgumentParser
 
 from models.rendering import *
@@ -19,7 +21,7 @@ from datasets import dataset_dict
 
 torch.backends.cudnn.benchmark = True
 
-def get_opts():
+def get_opts_parser():
     parser = ArgumentParser()
     parser.add_argument('--root_dir', type=str,
                         default='/home/ubuntu/data/nerf_example_data/nerf_synthetic/lego',
@@ -61,7 +63,7 @@ def get_opts():
     parser.add_argument('--near_t', type=float, default=1.0,
                         help='the near bound factor to start the ray')
 
-    return parser.parse_args()
+    return parser
 
 
 @torch.no_grad()
@@ -91,9 +93,7 @@ def f(models, embeddings, rays, N_samples, N_importance, chunk, white_back):
     return results
 
 
-if __name__ == "__main__":
-    args = get_opts()
-
+def main_color_mesh(args):
     kwargs = {'root_dir': args.root_dir,
               'img_wh': tuple(args.img_wh)}
     if args.dataset_name == 'llff':
@@ -297,3 +297,8 @@ if __name__ == "__main__":
              PlyElement.describe(face, 'face')]).write(f'{args.scene_name}.ply')
 
     print('Done!')
+
+if __name__ == "__main__":
+    parser = get_opts_parser()
+    args = parser.parse_args()
+    main_color_mesh(args)
