@@ -69,7 +69,7 @@ def test(args):
     nerf_fine = NeRF(in_channels_xyz=6*args.N_emb_xyz+3,
                      in_channels_dir=6*args.N_emb_dir+3)
     
-    ckpt_path = 'ckpts/horsyfew_run/epoch=6.ckpt'
+    ckpt_path = 'ckpts/horsyfew_decay/epoch=1.ckpt'
     
     load_ckpt(nerf_coarse, ckpt_path, model_name='nerf_coarse')
     load_ckpt(nerf_fine, ckpt_path, model_name='nerf_fine')
@@ -80,6 +80,7 @@ def test(args):
     models = {'coarse': nerf_coarse, 'fine': nerf_fine}
     embeddings = {'xyz': embedding_xyz, 'dir': embedding_dir}
 
+    print('datasets holds', len(dataset))
     sample = dataset[0]
     rays = sample['rays'].cuda()
     
@@ -88,23 +89,30 @@ def test(args):
     torch.cuda.synchronize()
     
     print('one pass time:', time.time()-t)
-    
+
+    img_gt = sample['rgbs'].view(img_wh[1], img_wh[0], 3)
     img_pred = results['rgb_fine'].view(img_wh[1], img_wh[0], 3).cpu().numpy()
     alpha_pred = results['opacity_fine'].view(img_wh[1], img_wh[0]).cpu().numpy()
     depth_pred = results['depth_fine'].view(img_wh[1], img_wh[0])
-    
+
+    print('PSNR', metrics.psnr(img_gt, img_pred).item())
+
     plt.subplots(figsize=(15, 8))
     plt.tight_layout()
 
-    plt.subplot(121)
+    plt.subplot(221)
+    plt.title('GT')
+    plt.imshow(img_gt)
+
+    plt.subplot(222)
     plt.title('pred')
     plt.imshow(img_pred)
 
-    plt.subplot(122)
+    plt.subplot(223)
     plt.title('depth')
     plt.imshow(visualize_depth(depth_pred).permute(1,2,0))
 
-    plt.savefig('logs/horsyfew_run/test.png')
+    plt.savefig('logs/horsyfew_decay/test.png')
 
 
 if '__main__' == __name__:
