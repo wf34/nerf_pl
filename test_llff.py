@@ -25,6 +25,7 @@ chunk = 1024*32*4
 class TestArgs(Tap):
     N_emb_xyz:int = 10
     N_emb_dir:int = 4
+    target_index:int = 0
 
 
 @torch.no_grad()
@@ -55,10 +56,10 @@ def f(rays, models, embeddings, dataset):
 
 
 def test(args):
-    img_wh = (480, 270)
+    img_wh = (180, 320)
     
     dataset = dataset_dict['llff'] \
-              ('/home/wf34/projects/nerf_pl/horsy-few/', 'test_train', spheric_poses=True,
+              ('/home/wf34/projects/nerf_pl/ads-tube/', 'test_train', spheric_poses=True,
                img_wh=img_wh)
     
     embedding_xyz = Embedding(args.N_emb_xyz)
@@ -69,7 +70,7 @@ def test(args):
     nerf_fine = NeRF(in_channels_xyz=6*args.N_emb_xyz+3,
                      in_channels_dir=6*args.N_emb_dir+3)
     
-    ckpt_path = 'ckpts/horsyfew_decay/epoch=1.ckpt'
+    ckpt_path = 'ckpts/ads-tube-2/epoch=6.ckpt'
     
     load_ckpt(nerf_coarse, ckpt_path, model_name='nerf_coarse')
     load_ckpt(nerf_fine, ckpt_path, model_name='nerf_fine')
@@ -80,8 +81,12 @@ def test(args):
     models = {'coarse': nerf_coarse, 'fine': nerf_fine}
     embeddings = {'xyz': embedding_xyz, 'dir': embedding_dir}
 
-    print('datasets holds', len(dataset))
-    sample = dataset[0]
+    dat_cardinality = len(dataset)
+    print('datasets holds', dat_cardinality)
+    if args.target_index >= dat_cardinality:
+        raise Exception('indexing')
+
+    sample = dataset[args.target_index]
     rays = sample['rays'].cuda()
     
     t = time.time()
@@ -97,7 +102,7 @@ def test(args):
 
     print('PSNR', metrics.psnr(img_gt, img_pred).item())
 
-    plt.subplots(figsize=(15, 8))
+    plt.subplots(figsize=(8, 15))
     plt.tight_layout()
 
     plt.subplot(221)
@@ -112,7 +117,7 @@ def test(args):
     plt.title('depth')
     plt.imshow(visualize_depth(depth_pred).permute(1,2,0))
 
-    plt.savefig('logs/horsyfew_decay/test.png')
+    plt.savefig(f'logs/ads-tube-2/test-{args.target_index}.png')
 
 
 if '__main__' == __name__:
