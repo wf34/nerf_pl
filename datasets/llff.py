@@ -154,7 +154,8 @@ def create_spheric_poses(radius, n_poses=120):
 
     spheric_poses = []
     for th in np.linspace(0, 2*np.pi, n_poses+1)[:-1]:
-        spheric_poses += [spheric_pose(th, -np.pi/5, radius)] # 36 degree view downwards
+        spheric_poses += [spheric_pose(th, 0, radius)] # forward
+        # spheric_poses += [spheric_pose(th, -np.pi/5, radius)] # 36 degree view downwards
     return np.stack(spheric_poses, 0)
 
 
